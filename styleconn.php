@@ -2,7 +2,7 @@
 /**
  * @package styleconn
  * Plugin Name: Styleconn Tools
- * Version: 0.3
+ * Version: 0.1
  * Description: Some tools to fixing styleconnection.no blogger
  * Author: Niteco
  * Author URI: http://niteco.se/
