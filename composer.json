@@ -1,0 +1,12 @@
+
+{
+  "name": "benjaminmedia/wp-blogg-no-tools",
+  "type": "wordpress-plugin",
+  "homepage": "https://github.com/BenjaminMedia/wp-blogg-no-tools",
+  "license": "GPLv3",
+  "description": "Tools for blogs from Blogg.no for exampe styleconnection",
+  "keywords": ["plugin"],
+  "require": {
+    "composer/installers": "~1.0.6"
+  }
+}
