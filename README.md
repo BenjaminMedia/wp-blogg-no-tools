@@ -1,1 +1,1 @@
-# category-map for styleconnections site
+# plugin tool for styleconnections site
