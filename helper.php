@@ -36,6 +36,13 @@ class styleconn_helper
         return iconv("ISO-8859-1", "UTF-8", trim($str));
     }
 
+    /**
+     * get inner text only
+     * @param $text
+     * @param string $tags
+     * @param bool $invert
+     * @return mixed
+     */
     public function strip_tags_content($text, $tags = '', $invert = FALSE) {
 
         preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', trim($tags), $tags);
@@ -55,12 +62,40 @@ class styleconn_helper
         return $text;
     }
 
+    /**
+     * get date time as format
+     * @param $str
+     * @return string
+     */
+    public function parseNorwegianDateTime($str){
+        $date = '';
+        if (preg_match("/([0-9]+)\.([0-9]+)\.([0-9]+) kl\.([0-9]+)\:([0-9]+)/i", $str, $m)){
+            $day = $m[1];
+            $month = $m[2];
+            $year = $m[3];
+            $hour = $m[4];
+            $min = $m[5];
+            $date = "$year-$month-$day $hour:$min";
+        }
+        return $date;
+    }
+
+    /**
+     * get date time as format
+     * @param $str
+     * @return bool|string
+     */
     public function datetime($str)
     {
         $time = preg_replace("/[^0-9 \-:.]/", "", $str);
         return date('Y-m-d H:i:s', strtotime($time));
     }
 
+    /**
+     * extract post data from content page
+     * @param $url
+     * @return false|string
+     */
     public function extract_content($url)
     {
         // Create DOM from URL or file
@@ -130,22 +165,34 @@ class styleconn_helper
         return $return;
     }
 
+    /**
+     * insert / update post
+     * @param $data
+     * @return false|string
+     */
     public function insert_content($data)
     {
+        global $wpdb;
+
         /**
          * insert post
          */
-        $post = get_page_by_title($data['post_title'], 'OBJECT', 'post');
+        $post = $this->get_post($data['post_title'], $data['post_time']);
+
         if (empty($post)) {
             // insert
             $data_post = array(
                 'post_title' => $data['post_title'],
                 'post_content' => $data['post_content'],
+                'post_date' => $data['post_time'],
+                'post_status' => 'publish',
             );
             $post_id = wp_insert_post($data_post);
+            $post = get_post($post_id);
 
             // map category / post
-            wp_set_object_terms($post_id, $data['post_category'], 'category');
+            $category = get_term_by('name', $data['post_category'], 'category');
+            wp_set_post_categories($post->ID, $category->term_id);
         } else {
             // update
             $data_post = array(
@@ -155,13 +202,12 @@ class styleconn_helper
             wp_update_post($data_post);
 
             // map category / post
-            wp_set_object_terms($post->ID, $data['post_category'], 'category');
+            $category = get_term_by('name', $data['post_category'], 'category');
+            wp_set_post_categories($post->ID, $category->term_id);
 
             $comments = get_comments([
                 'post_id' => $post->ID,
             ]);
-
-            global $wpdb;
 
             // remove comment
             $wpdb->delete($wpdb->comments, [
@@ -201,6 +247,11 @@ class styleconn_helper
         return get_permalink($post->ID);
     }
 
+    /**
+     * extract category list
+     * @param $url
+     * @return array
+     */
     public function extract_categories($url)
     {
         $html = file_get_html($url);
@@ -217,6 +268,11 @@ class styleconn_helper
         return $data;
     }
 
+    /**
+     * extract post list from category page
+     * @param $url
+     * @return array|bool
+     */
     public function extract_category($url)
     {
         $html = file_get_html($url);
@@ -228,24 +284,62 @@ class styleconn_helper
 
         $data = array();
         foreach ($main->find('.entry') as $entry) {
+            $post = array();
+
             $title = $entry->find('a', 0);
-            $data[] = $this->iconv($title->plaintext);
+            $post['post_title'] = $this->iconv($title->plaintext);
+
+            // post time
+            $meta = $entry->find('.meta', 0);
+            $time = $meta->find('li', 0);
+            $time = $this->strip_tags_content($time->innertext);
+            $post['post_time'] = $this->datetime($time);
+
+            $data[] = $post;
         }
 
         $html->clear();
         return $data;
     }
 
-    public function map_category($post, $category)
+    /**
+     * map category and post (search post by title vs time)
+     * @param $post_data
+     * @param $cat_name
+     * @return int
+     */
+    public function map_category($post_data, $cat_name)
     {
-        $post = get_page_by_title($post, 'OBJECT', 'post');
+        $post = $this->get_post($post_data['post_title'], $post_data['post_time']);
+
         if (!empty($post)) {
-            $result = wp_set_object_terms($post->ID, $category, 'category');
+            $category = get_term_by('name', $cat_name, 'category');
+            $result = wp_set_post_categories($post->ID, $category->term_id);
             if (!is_wp_error($result)) {
                 return 1;
             }
         }
         return 0;
     }
+
+    /**
+     * get post by title vs time
+     * @param $post_title
+     * @param $post_time
+     * @return array|null|object|void
+     */
+    public function get_post($post_title, $post_time)
+    {
+        global $wpdb;
+
+        $post = $wpdb->get_row($wpdb->prepare("SELECT ID, post_title, post_date 
+        FROM `wp_posts` 
+        WHERE post_title = '%s' 
+        AND DATE(post_date) = DATE('%s')
+        AND post_status", $post_title, $post_time, 'publish'));
+
+        return $post;
+    }
+
 }
 ?>

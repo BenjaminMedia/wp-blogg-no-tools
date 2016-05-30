@@ -371,7 +371,7 @@ function styleconn_map_category() {
         foreach ($posts as $post) {
             $count += $helper->map_category($post, $category);
         }
-        echo 'done';
+        echo 'done - '. $count;
     }
     die();
 }
