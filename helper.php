@@ -334,12 +334,18 @@ class styleconn_helper
 
         $post = $wpdb->get_row($wpdb->prepare("SELECT ID, post_title, post_date 
         FROM `wp_posts` 
-        WHERE post_title = '%s' 
+        WHERE 
+        (post_title = '%s' OR post_title = '%s' OR post_title = '%s' OR post_title = '%s' OR post_title = '%s') 
         AND DATE(post_date) = DATE('%s')
-        AND post_status", $post_title, $post_time, 'publish'));
+        AND post_status = '%s'",
+            $post_title,
+            htmlspecialchars($post_title, ENT_QUOTES),
+            htmlspecialchars_decode($post_title),
+            htmlentities($post_title, ENT_QUOTES),
+            html_entity_decode($post_title, ENT_QUOTES),
+            $post_time, 'publish'));
 
         return $post;
     }
-
 }
 ?>
