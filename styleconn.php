@@ -2,7 +2,7 @@
 /**
  * @package styleconn
  * Plugin Name: Styleconn Tools
- * Version: 0.1
+ * Version: 0.2
  * Description: Some tools to fixing styleconnection.no blogger
  * Author: Niteco
  * Author URI: http://niteco.se/
@@ -11,11 +11,11 @@
  * Domain Path: /languages
  */
 
-define('ALLOW_UNFILTERED_UPLOADS', true);
+defined('ALLOW_UNFILTERED_UPLOADS') or define('ALLOW_UNFILTERED_UPLOADS', true);
 
 // no limit time
 ini_set('max_execution_time', 300);
-//error_reporting(E_ERROR);
+error_reporting(E_ERROR);
 
 // start up the engine
 add_action('admin_menu'             , 'styleconn_menu'     );
